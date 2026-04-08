@@ -40,3 +40,5 @@ Thumbs.db
 *.bin
 *.safetensors
 *.onnx
+chunks/
+cloud/deploy.sh
