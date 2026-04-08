@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.venv/
+venv/
+
+# Node
+node_modules/
+.next/
+.turbo/
+
+# Environment & secrets
+.env
+.env.local
+.env.production
+*.key
+*.crt
+*.pem
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docker
+*.db
+*.sqlite
+
+# Model files (too large for git)
+*.bin
+*.safetensors
+*.onnx

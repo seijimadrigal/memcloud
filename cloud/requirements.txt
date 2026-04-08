@@ -1,0 +1,16 @@
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+sqlalchemy[asyncio]==2.0.36
+asyncpg==0.30.0
+psycopg2-binary==2.9.10
+redis[hiredis]==5.2.1
+pydantic==2.10.3
+sentence-transformers==3.3.1
+torch==2.5.1
+numpy==2.2.1
+openai==1.58.1
+websockets==14.1
+python-multipart==0.0.20
+httptools==0.6.4
+pgvector==0.3.6
+einops>=0.7.0

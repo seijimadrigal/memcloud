@@ -1,0 +1,17 @@
+{
+  "name": "memchip",
+  "version": "0.2.0",
+  "description": "MemChip — Memory-as-a-service for AI agents",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "files": ["dist"],
+  "keywords": ["memory", "ai", "agents", "mcp", "rag"],
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

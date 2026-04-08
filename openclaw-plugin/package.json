@@ -1,0 +1,12 @@
+{
+  "name": "openclaw-memchip",
+  "version": "1.0.0",
+  "description": "MemChip Cloud memory plugin for OpenClaw",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js"
+  },
+  "keywords": ["openclaw", "plugin", "memory", "memchip"],
+  "license": "MIT"
+}
