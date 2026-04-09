@@ -1,4 +1,4 @@
-"""MemChip Cloud API — FastAPI application. v0.5.0"""
+"""Memcloud API — FastAPI application. v1.0.0"""
 import asyncio
 import re
 import time
@@ -46,7 +46,7 @@ from app.engine import (
     create_project, get_project, list_projects, update_project, archive_project,
     get_memory_count_for_pool, get_recent_memories_for_pool,
     get_agent_context, set_agent_context, clear_agent_context,
-    # v0.5.0
+    # v1.0.0
     recall_context,
 )
 from app.models import (
@@ -76,9 +76,9 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="MemChip Cloud API",
+    title="Memcloud API",
     description="Memory-as-a-service for AI agents. Hybrid search, multi-hop reasoning, real-time shared memory.",
-    version="0.5.0",
+    version="1.0.0",
     lifespan=lifespan,
 )
 
@@ -139,7 +139,7 @@ async def health(db: AsyncSession = Depends(get_db)):
         pass
     return HealthResponse(
         status="ok" if pg_ok and redis_ok else "degraded",
-        version="0.5.0",
+        version="1.0.0",
         postgres=pg_ok,
         redis=redis_ok,
         pgvector=True,
@@ -621,15 +621,15 @@ async def api_clear_agent_context(
 
 # ========== Assistant Chat ==========
 
-MEMCHIP_SYSTEM_PROMPT = """You are MemChip Assistant — an AI helper for the MemChip memory-as-a-service platform.
+MEMCLOUD_SYSTEM_PROMPT = """You are Memcloud Assistant — an AI helper for the Memcloud memory-as-a-service platform.
 
 ## What You Can Do
 - Answer questions about the user's stored memories based on retrieved context below
-- Explain how to use MemChip (API, concepts, configuration)
+- Explain how to use Memcloud (API, concepts, configuration)
 - Show retrieval transparency — explain why certain memories were found
 
-## MemChip Knowledge Base
-MemChip is a memory service for AI agents with these core concepts:
+## Memcloud Knowledge Base
+Memcloud is a memory service for AI agents with these core concepts:
 - **Memories**: Extracted knowledge units (triples, summaries, profiles, temporal events)
 - **Scopes**: private (single agent), task (task-scoped), project (project-scoped), team (org-wide), global (cross-org)
 - **Pools**: Shared memory namespaces (e.g. "shared:team", "project:my-project"). Agents get pool access via ACL.
@@ -651,7 +651,7 @@ MemChip is a memory service for AI agents with these core concepts:
 ## Plugin Configuration (OpenClaw)
 ```json
 {
-  "name": "@memchip/openclaw-memchip",
+  "name": "@memcloud/openclaw-memcloud",
   "config": {
     "apiUrl": "http://your-server/v1",
     "apiKey": "mc_...",
@@ -669,7 +669,7 @@ MemChip is a memory service for AI agents with these core concepts:
 
 ## Instructions
 - Answer based on the retrieved memories when the question is about stored knowledge
-- Answer based on MemChip documentation when the question is about how to use the platform
+- Answer based on Memcloud documentation when the question is about how to use the platform
 - If memories are relevant, reference them naturally
 - If no relevant memories are found, say so honestly
 - Be concise and helpful
@@ -838,7 +838,7 @@ async def api_assistant_chat(
 
     # ── Step 6: Build LLM prompt ──
     now_str = now_utc.strftime("%Y-%m-%d %H:%M:%S UTC")
-    system_prompt = MEMCHIP_SYSTEM_PROMPT.replace("{context}", context)
+    system_prompt = MEMCLOUD_SYSTEM_PROMPT.replace("{context}", context)
     time_context = f"Current time: {now_str}"
     if time_cutoff:
         time_context += f"\nTime filter applied: showing memories since {time_cutoff.strftime('%Y-%m-%d %H:%M:%S UTC')}"
@@ -880,7 +880,7 @@ async def api_assistant_chat(
     )
 
 
-# ========== v0.5.0: Recall & Integrations ==========
+# ========== v1.0.0: Recall & Integrations ==========
 
 @app.post("/v1/recall")
 async def api_recall(request: Request, auth: AuthContext = Depends(authenticate), db: AsyncSession = Depends(get_db)):
@@ -915,7 +915,7 @@ async def langchain_config(request: Request, auth: AuthContext = Depends(authent
         "search_endpoint": "/v1/memories/search/",
         "supported_formats": ["xml", "markdown", "text"],
         "default_token_budget": 4000,
-        "version": "0.5.0",
+        "version": "1.0.0",
     }
 
 
@@ -1561,7 +1561,7 @@ async def api_migrate_categories(
     auth: AuthContext = Depends(authenticate),
     db: AsyncSession = Depends(get_db),
 ):
-    """Migrate old Mem0-style categories to new MemChip categories via SQL mapping."""
+    """Migrate old Mem0-style categories to new Memcloud categories via SQL mapping."""
     results = {}
     for old_cat, new_cat in CATEGORY_MIGRATION_MAP.items():
         q = sa_text("""

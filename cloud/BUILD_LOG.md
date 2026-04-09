@@ -1,12 +1,12 @@
-# MemChip Cloud — Build Log
+# Memcloud — Build Log
 
 ## Sprint 1: REST API + WebSocket
 
 ### 2026-04-02 — Build & Deploy Complete ✅
 
 **API Key:** `mc_d798cc892328f4e598803eac5f675cb1ad301fc16a78fd6e`
-**API URL:** `http://76.13.23.55/v1/`
-**Docs:** `http://76.13.23.55/docs`
+**API URL:** `https://api.memcloud.net/v1/`
+**Docs:** `https://api.memcloud.net/docs`
 
 ### Test Results
 
@@ -24,7 +24,7 @@
 | OpenAPI docs | ✅ | Swagger UI at /docs |
 
 ### Architecture
-- **FastAPI** async API wrapping MemChip extraction pipeline (5 parallel LLM calls)
+- **FastAPI** async API wrapping Memcloud extraction pipeline (5 parallel LLM calls)
 - **PostgreSQL 16** for multi-tenant storage with FTS indexes
 - **Redis 7** for rate limiting + WebSocket pub/sub broadcast
 - **all-MiniLM-L6-v2** for vector embeddings (local, no API cost)
@@ -33,10 +33,10 @@
 
 ### Docker Containers
 ```
-memchip-api       — FastAPI (2 workers)
-memchip-postgres  — PostgreSQL 16 Alpine
-memchip-redis     — Redis 7 Alpine
-memchip-nginx     — nginx Alpine (reverse proxy)
+memcloud-api       — FastAPI (2 workers)
+memcloud-postgres  — PostgreSQL 16 Alpine
+memcloud-redis     — Redis 7 Alpine
+memcloud-nginx     — nginx Alpine (reverse proxy)
 ```
 
 ### Files Created
@@ -67,5 +67,5 @@ Organization (org_id)
 - [ ] SSL/TLS with Let's Encrypt
 - [ ] MCP Server for Claude Code / Cursor
 - [ ] OpenClaw plugin (drop-in Cognee/Mem0 replacement)
-- [ ] Python SDK (`pip install memchip`)
-- [ ] Domain setup (api.memchip.dev)
+- [ ] Python SDK (`pip install memcloud`)
+- [ ] Domain setup (api.memcloud.net)

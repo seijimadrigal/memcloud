@@ -1,5 +1,5 @@
 /**
- * MemChip TypeScript SDK — Memory-as-a-service for AI agents
+ * Memcloud TypeScript SDK — Memory-as-a-service for AI agents
  *
  * Usage:
  *   import { MemChipClient } from 'memchip';
@@ -53,7 +53,7 @@ export class MemChipClient {
   private poolId?: string;
 
   constructor(config: MemChipConfig) {
-    this.apiUrl = (config.apiUrl || 'http://76.13.23.55/v1').replace(/\/$/, '');
+    this.apiUrl = (config.apiUrl || 'https://api.memcloud.net/v1').replace(/\/$/, '');
     this.apiKey = config.apiKey;
     this.userId = config.userId || 'default';
     this.agentId = config.agentId;
@@ -72,7 +72,7 @@ export class MemChipClient {
     });
     if (!res.ok) {
       const text = await res.text();
-      throw new Error(`MemChip API ${res.status}: ${text}`);
+      throw new Error(`Memcloud API ${res.status}: ${text}`);
     }
     return res.json();
   }

@@ -1,18 +1,18 @@
-# MemChip
+# Memcloud
 
 **The memory layer your AI agents are missing.**
 
-MemChip is a self-hosted Memory-as-a-Service API that gives any AI agent persistent, accurate long-term memory. Store conversations, decisions, and facts once — recall them instantly across sessions, agents, and frameworks.
+Memcloud is a self-hosted Memory-as-a-Service API that gives any AI agent persistent, accurate long-term memory. Store conversations, decisions, and facts once — recall them instantly across sessions, agents, and frameworks.
 
-## Why MemChip?
+## Why Memcloud?
 
-AI agents forget everything between sessions. Context windows overflow. RAG retrieves documents, not memories. MemChip solves this with a purpose-built memory system:
+AI agents forget everything between sessions. Context windows overflow. RAG retrieves documents, not memories. Memcloud solves this with a purpose-built memory system:
 
 - **Hybrid search** — BM25 full-text + pgvector semantic + knowledge graph + CrossEncoder reranking. Four retrieval signals fused via Reciprocal Rank Fusion, then reranked for deep relevance.
 - **One-call context injection** — `POST /v1/recall` returns pre-assembled, token-budgeted context ready to inject into any agent's system prompt. No more gluing together search + profile + recent history yourself.
 - **Automatic extraction** — Drop in raw text, get back structured triples, summaries, temporal events, and user profiles. Five parallel LLM calls extract everything meaningful.
 - **Multi-agent collaboration** — Shared memory pools with ACL-based access control. Agent A stores a deployment note, Agent B finds it instantly. Projects and tasks scope memories automatically.
-- **Conflict-aware** — When "user's favorite color is blue" meets "user now prefers green", MemChip detects the conflict, supersedes the old memory, and keeps full history.
+- **Conflict-aware** — When "user's favorite color is blue" meets "user now prefers green", Memcloud detects the conflict, supersedes the old memory, and keeps full history.
 - **Framework-agnostic** — REST API + Python SDK + TypeScript SDK + LangChain adapter + MCP server + OpenClaw plugin. Plug into anything.
 
 ## Architecture
@@ -46,8 +46,8 @@ Agent → POST /v1/recall → Hybrid Search → Reranking → Context Assembly �
 ### 1. Deploy with Docker Compose
 
 ```bash
-git clone https://github.com/seijimadrigal/memchip.git
-cd memchip/cloud
+git clone https://github.com/seijimadrigal/memcloud.git
+cd memcloud/cloud
 
 # Create .env with your LLM API key
 cat > .env << EOF
@@ -114,7 +114,7 @@ curl -X POST http://localhost/v1/recall \
 Returns pre-assembled context:
 
 ```xml
-<memchip-recall>
+<memcloud-recall>
 <user-profile>
 - seiji: editor_preference = Neovim with Lazy
 - seiji: theme = dark mode
@@ -127,7 +127,7 @@ Returns pre-assembled context:
 <recent-context>
 - [summary] Discussed setting up Neovim config with LSP support
 </recent-context>
-</memchip-recall>
+</memcloud-recall>
 ```
 
 Inject this directly into your agent's system prompt. Supports `xml`, `markdown`, and `text` formats.
@@ -137,7 +137,7 @@ Inject this directly into your agent's system prompt. Supports `xml`, `markdown`
 ### Python
 
 ```bash
-pip install httpx  # memchip SDK dependency
+pip install httpx  # memcloud SDK dependency
 ```
 
 ```python
@@ -167,7 +167,7 @@ answer = mc.answer("What database did we choose?")
 ### TypeScript
 
 ```typescript
-import { MemChipClient } from 'memchip';
+import { MemChipClient } from 'memcloud';
 
 const mc = new MemChipClient({
   apiKey: 'mc_your_key',
@@ -197,7 +197,7 @@ memory = MemChipMemory(
 
 chain = ConversationChain(memory=memory, llm=llm)
 chain.run("What did we discuss last time?")
-# MemChip recalls relevant context automatically
+# Memcloud recalls relevant context automatically
 ```
 
 ### MCP (Claude Code / Cursor)
@@ -207,7 +207,7 @@ Add to `~/.claude/mcp.json`:
 ```json
 {
   "mcpServers": {
-    "memchip": {
+    "memcloud": {
       "command": "python3",
       "args": [
         "path/to/mcp_server.py",
@@ -336,4 +336,4 @@ MIT
 
 ## Contributing
 
-Issues and PRs welcome at [github.com/seijimadrigal/memchip](https://github.com/seijimadrigal/memchip).
+Issues and PRs welcome at [github.com/seijimadrigal/memcloud](https://github.com/seijimadrigal/memcloud).

@@ -1,9 +1,9 @@
 """
-MemChip Python Client
+Memcloud Python Client
 
 Usage:
     from memchip import MemChipClient
-    
+
     mc = MemChipClient(api_key="mc_xxx", user_id="seiji")
     
     # Store a memory
@@ -35,12 +35,12 @@ from typing import Optional, List, Dict, Any
 
 
 class MemChipClient:
-    """MemChip API client."""
+    """Memcloud API client."""
     
     def __init__(
         self,
         api_key: str,
-        api_url: str = "http://76.13.23.55/v1",
+        api_url: str = "https://api.memcloud.net/v1",
         user_id: str = "default",
         agent_id: Optional[str] = None,
         pool_id: Optional[str] = None,

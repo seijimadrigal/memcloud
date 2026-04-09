@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-MemChip MCP Server — Model Context Protocol server for Claude Code, Cursor, Windsurf, etc.
+Memcloud MCP Server — Model Context Protocol server for Claude Code, Cursor, Windsurf, etc.
 Runs as stdio transport. Exposes memory tools via MCP.
 
 Usage:
@@ -9,9 +9,9 @@ Usage:
 Config for Claude Code (~/.claude/mcp.json):
 {
   "mcpServers": {
-    "memchip": {
+    "memcloud": {
       "command": "python3",
-      "args": ["/path/to/mcp_server.py", "--api-url", "http://76.13.23.55/v1", "--api-key", "mc_xxx", "--user-id", "seiji"]
+      "args": ["/path/to/mcp_server.py", "--api-url", "https://api.memcloud.net/v1", "--api-key", "mc_xxx", "--user-id", "seiji"]
     }
   }
 }
@@ -207,7 +207,7 @@ class MemChipMCP:
                         "result": {
                             "protocolVersion": "2024-11-05",
                             "capabilities": {"tools": {}},
-                            "serverInfo": {"name": "memchip", "version": "0.2.0"},
+                            "serverInfo": {"name": "memcloud", "version": "1.0.0"},
                         },
                     })
                 
@@ -245,8 +245,8 @@ class MemChipMCP:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="MemChip MCP Server")
-    parser.add_argument("--api-url", required=True, help="MemChip API URL")
+    parser = argparse.ArgumentParser(description="Memcloud MCP Server")
+    parser.add_argument("--api-url", required=True, help="Memcloud API URL")
     parser.add_argument("--api-key", required=True, help="API key")
     parser.add_argument("--user-id", required=True, help="User ID")
     parser.add_argument("--agent-id", default="mcp", help="Agent ID")

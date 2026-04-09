@@ -24,10 +24,10 @@ class ConnectionManager:
         """Background task: listen to Redis pub/sub and broadcast to local WebSocket clients."""
         r = await self.get_redis()
         pubsub = r.pubsub()
-        await pubsub.psubscribe("memchip:memory:*")
+        await pubsub.psubscribe("memcloud:memory:*")
         async for message in pubsub.listen():
             if message["type"] == "pmessage":
-                channel = message["channel"]  # memchip:memory:<pool_id>
+                channel = message["channel"]  # memcloud:memory:<pool_id>
                 pool_id = channel.split(":", 2)[2] if channel.count(":") >= 2 else "default"
                 data = message["data"]
                 await self._broadcast_local(pool_id, data)
@@ -60,7 +60,7 @@ class ConnectionManager:
         """Publish memory event to Redis (broadcasts to all API instances)."""
         r = await self.get_redis()
         payload = json.dumps({"event": event_type, "pool_id": pool_id, "data": data})
-        await r.publish(f"memchip:memory:{pool_id}", payload)
+        await r.publish(f"memcloud:memory:{pool_id}", payload)
 
 
 manager = ConnectionManager()

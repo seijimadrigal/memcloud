@@ -5,11 +5,11 @@ services:
     build:
       context: ..
       dockerfile: cloud/Dockerfile
-    container_name: memchip-api
+    container_name: memcloud-api
     restart: unless-stopped
     environment:
-      - DATABASE_URL=postgresql+asyncpg://memchip:memchip_secret_2026@postgres:5432/memchip
-      - DATABASE_URL_SYNC=postgresql://memchip:memchip_secret_2026@postgres:5432/memchip
+      - DATABASE_URL=postgresql+asyncpg://memcloud:memcloud_secret_2026@postgres:5432/memcloud
+      - DATABASE_URL_SYNC=postgresql://memcloud:memcloud_secret_2026@postgres:5432/memcloud
       - REDIS_URL=redis://redis:6379/0
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
       - LLM_MODEL=${LLM_MODEL:-openai/gpt-4.1-mini}
@@ -30,25 +30,25 @@ services:
 
   postgres:
     image: pgvector/pgvector:pg16
-    container_name: memchip-postgres
+    container_name: memcloud-postgres
     restart: unless-stopped
     environment:
-      - POSTGRES_DB=memchip
-      - POSTGRES_USER=memchip
-      - POSTGRES_PASSWORD=memchip_secret_2026
+      - POSTGRES_DB=memcloud
+      - POSTGRES_USER=memcloud
+      - POSTGRES_PASSWORD=memcloud_secret_2026
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
       - "127.0.0.1:5433:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U memchip"]
+      test: ["CMD-SHELL", "pg_isready -U memcloud"]
       interval: 5s
       timeout: 5s
       retries: 5
 
   redis:
     image: redis:7-alpine
-    container_name: memchip-redis
+    container_name: memcloud-redis
     restart: unless-stopped
     command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
     volumes:
@@ -63,7 +63,7 @@ services:
 
   nginx:
     image: nginx:alpine
-    container_name: memchip-nginx
+    container_name: memcloud-nginx
     restart: unless-stopped
     ports:
       - "80:80"

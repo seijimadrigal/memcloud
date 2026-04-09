@@ -1,5 +1,5 @@
 """
-MemChip LangChain Memory Integration
+Memcloud LangChain Memory Integration
 
 Usage:
     from memchip.langchain import MemChipMemory
@@ -7,7 +7,7 @@ Usage:
 
     memory = MemChipMemory(
         api_key="mc_xxx",
-        api_url="http://76.13.23.55/v1",
+        api_url="https://api.memcloud.net/v1",
         user_id="seiji",
         agent_id="lyn"
     )
@@ -18,12 +18,12 @@ from typing import Any, Dict, List, Optional
 
 
 class MemChipMemory:
-    """LangChain-compatible memory backed by MemChip API.
+    """LangChain-compatible memory backed by Memcloud API.
 
     Implements the interface expected by LangChain's memory classes:
-    - load_memory_variables(): returns context from MemChip recall
-    - save_context(): stores conversation turns to MemChip
-    - clear(): clears memory (no-op for MemChip)
+    - load_memory_variables(): returns context from Memcloud recall
+    - save_context(): stores conversation turns to Memcloud
+    - clear(): clears memory (no-op for Memcloud)
     """
 
     memory_key: str = "history"
@@ -32,7 +32,7 @@ class MemChipMemory:
     def __init__(
         self,
         api_key: str,
-        api_url: str = "http://76.13.23.55/v1",
+        api_url: str = "https://api.memcloud.net/v1",
         user_id: str = "default",
         agent_id: Optional[str] = None,
         token_budget: int = 4000,
@@ -54,7 +54,7 @@ class MemChipMemory:
         return [self.memory_key]
 
     def load_memory_variables(self, inputs: Dict[str, Any] = None) -> Dict[str, str]:
-        """Load context from MemChip recall endpoint."""
+        """Load context from Memcloud recall endpoint."""
         query = None
         if inputs:
             query = inputs.get("input") or inputs.get("question") or inputs.get("query")
@@ -71,7 +71,7 @@ class MemChipMemory:
             return {self.memory_key: ""}
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
-        """Store conversation turn to MemChip."""
+        """Store conversation turn to Memcloud."""
         if not self.auto_capture:
             return
 
@@ -85,5 +85,5 @@ class MemChipMemory:
             pass
 
     def clear(self) -> None:
-        """No-op — MemChip manages memory lifecycle via decay."""
+        """No-op — Memcloud manages memory lifecycle via decay."""
         pass
