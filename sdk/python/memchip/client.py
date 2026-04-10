@@ -40,7 +40,7 @@ class MemChipClient:
     def __init__(
         self,
         api_key: str,
-        api_url: str = "https://api.memcloud.net/v1",
+        api_url: str = "https://api.memcloud.dev/v1",
         user_id: str = "default",
         agent_id: Optional[str] = None,
         pool_id: Optional[str] = None,

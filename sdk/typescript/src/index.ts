@@ -53,7 +53,7 @@ export class MemChipClient {
   private poolId?: string;
 
   constructor(config: MemChipConfig) {
-    this.apiUrl = (config.apiUrl || 'https://api.memcloud.net/v1').replace(/\/$/, '');
+    this.apiUrl = (config.apiUrl || 'https://api.memcloud.dev/v1').replace(/\/$/, '');
     this.apiKey = config.apiKey;
     this.userId = config.userId || 'default';
     this.agentId = config.agentId;

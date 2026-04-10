@@ -22,7 +22,7 @@ plugins:
   entries:
     openclaw-memcloud:
       config:
-        apiUrl: "https://api.memcloud.net/v1"
+        apiUrl: "https://api.memcloud.dev/v1"
         apiKey: "mc_d798cc892328f4e598803eac5f675cb1ad301fc16a78fd6e"
         userId: "seiji"
         agentId: "lyn"

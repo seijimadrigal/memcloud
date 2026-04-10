@@ -1,8 +1,8 @@
 """Configuration from environment variables."""
 import os
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://memcloud:memcloud@postgres:5432/memcloud")
-DATABASE_URL_SYNC = os.getenv("DATABASE_URL_SYNC", "postgresql://memcloud:memcloud@postgres:5432/memcloud")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://memchip:memchip_secret_2026@postgres:5432/memchip")
+DATABASE_URL_SYNC = os.getenv("DATABASE_URL_SYNC", "postgresql://memchip:memchip_secret_2026@postgres:5432/memchip")
 REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")

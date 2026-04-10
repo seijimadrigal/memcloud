@@ -5,8 +5,8 @@
 ### 2026-04-02 — Build & Deploy Complete ✅
 
 **API Key:** `mc_d798cc892328f4e598803eac5f675cb1ad301fc16a78fd6e`
-**API URL:** `https://api.memcloud.net/v1/`
-**Docs:** `https://api.memcloud.net/docs`
+**API URL:** `https://api.memcloud.dev/v1/`
+**Docs:** `https://api.memcloud.dev/docs`
 
 ### Test Results
 
@@ -68,4 +68,4 @@ Organization (org_id)
 - [ ] MCP Server for Claude Code / Cursor
 - [ ] OpenClaw plugin (drop-in Cognee/Mem0 replacement)
 - [ ] Python SDK (`pip install memcloud`)
-- [ ] Domain setup (api.memcloud.net)
+- [ ] Domain setup (api.memcloud.dev)

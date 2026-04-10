@@ -7,7 +7,7 @@ Usage:
 
     memory = MemChipMemory(
         api_key="mc_xxx",
-        api_url="https://api.memcloud.net/v1",
+        api_url="https://api.memcloud.dev/v1",
         user_id="seiji",
         agent_id="lyn"
     )
@@ -32,7 +32,7 @@ class MemChipMemory:
     def __init__(
         self,
         api_key: str,
-        api_url: str = "https://api.memcloud.net/v1",
+        api_url: str = "https://api.memcloud.dev/v1",
         user_id: str = "default",
         agent_id: Optional[str] = None,
         token_budget: int = 4000,

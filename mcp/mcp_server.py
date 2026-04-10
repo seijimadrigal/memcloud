@@ -11,7 +11,7 @@ Config for Claude Code (~/.claude/mcp.json):
   "mcpServers": {
     "memcloud": {
       "command": "python3",
-      "args": ["/path/to/mcp_server.py", "--api-url", "https://api.memcloud.net/v1", "--api-key", "mc_xxx", "--user-id", "seiji"]
+      "args": ["/path/to/mcp_server.py", "--api-url", "https://api.memcloud.dev/v1", "--api-key", "mc_xxx", "--user-id", "seiji"]
     }
   }
 }
