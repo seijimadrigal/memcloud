@@ -420,10 +420,10 @@ async def _find_duplicate(
             sim = 1.0 - row.distance
             if sim >= 0.70:
                 mem_obj = (await db.execute(select(Memory).where(Memory.id == row.id))).scalar_one_or_none()
-                return ("duplicate", mem_obj, sim)
+                return ("duplicate", mem_obj, None)  # sim was: {:.4f}
             elif sim >= 0.60:
                 mem_obj = (await db.execute(select(Memory).where(Memory.id == row.id))).scalar_one_or_none()
-                return ("near_duplicate", mem_obj, sim)
+                return ("near_duplicate", mem_obj, None)  # sim was nearby
 
         # Check older memories
         older_vec_stmt = (
@@ -439,10 +439,10 @@ async def _find_duplicate(
             sim = 1.0 - row.distance
             if sim >= 0.70:
                 mem_obj = (await db.execute(select(Memory).where(Memory.id == row.id))).scalar_one_or_none()
-                return ("duplicate", mem_obj, sim)
+                return ("duplicate", mem_obj, None)  # sim was: {:.4f}
             elif sim >= 0.60:
                 mem_obj = (await db.execute(select(Memory).where(Memory.id == row.id))).scalar_one_or_none()
-                return ("near_duplicate", mem_obj, sim)
+                return ("near_duplicate", mem_obj, None)  # sim was nearby
 
     return ("new", None, None)
 
@@ -1980,4 +1980,286 @@ async def recall_context(
         "token_count": tokens_used,
         "sections": {k: len(v) // chars_per_token for k, v in sections.items()},
         "latency_ms": round(latency_ms, 1),
+    }
+
+
+# ─── Phase 4 Engine Functions ─────────────────────────────────────────
+
+
+async def batch_sync(
+    db, org_id: str, operations: list, user_id: str = "default",
+    agent_id: str = None
+) -> dict:
+    """Process multiple memory operations in a single request.
+    Each operation: {"op": "upsert"|"delete", "memory": {...}, "id": "..."}
+    """
+    results = {"processed": 0, "created": 0, "deleted": 0, "errors": []}
+
+    for i, op in enumerate(operations):
+        try:
+            action = op.get("op", "upsert")
+            if action == "upsert":
+                mem_data = op.get("memory", {})
+                text = mem_data.get("text") or mem_data.get("content", "")
+                if not text:
+                    results["errors"].append({"index": i, "error": "Missing text/content"})
+                    continue
+                result = await add_memory(
+                    db, org_id, text=text, user_id=user_id,
+                    agent_id=agent_id or mem_data.get("agent_id"),
+                    pool_id=mem_data.get("pool_id"),
+                    scope=mem_data.get("scope", "private"),
+                    source_type=mem_data.get("source_type", "batch_sync"),
+                    source_ref=mem_data.get("source_ref"),
+                    metadata=mem_data.get("metadata"),
+                )
+                results["created"] += result.get("memories_created", 0)
+            elif action == "delete":
+                mem_id = op.get("id")
+                if mem_id:
+                    await delete_memory(db, mem_id, org_id)
+                    results["deleted"] += 1
+            results["processed"] += 1
+        except Exception as e:
+            results["errors"].append({"index": i, "error": str(e)})
+
+    return results
+
+
+async def create_memory_pool(
+    db, org_id: str, pool_id: str, name: str = None,
+    agents: list = None, description: str = None
+) -> dict:
+    """Create a shared memory pool and optionally grant access to agents."""
+    created_access = []
+    for agent_id in (agents or []):
+        access = PoolAccess(
+            org_id=org_id, pool_id=pool_id, agent_id=agent_id,
+            permissions={"read": True, "write": True, "admin": False}
+        )
+        db.add(access)
+        created_access.append(agent_id)
+
+    await db.commit()
+    return {
+        "pool_id": pool_id,
+        "name": name or pool_id,
+        "description": description,
+        "agents": created_access,
+        "status": "created"
+    }
+
+
+async def get_pool_memories(
+    db, org_id: str, pool_id: str, agent_id: str = None,
+    memory_type: str = None, limit: int = 50, offset: int = 0,
+    after: str = None, before: str = None
+) -> dict:
+    """Get memories from a specific pool with optional time filtering."""
+    from datetime import datetime as dt
+
+    # Check access
+    if agent_id:
+        allowed = await check_pool_access(db, org_id, agent_id, pool_id, "read")
+        if not allowed:
+            return {"error": "Access denied", "memories": [], "total": 0}
+
+    stmt = select(Memory).where(
+        Memory.org_id == org_id,
+        Memory.pool_id == pool_id,
+        Memory.status == "active",
+    )
+
+    if memory_type:
+        stmt = stmt.where(Memory.memory_type == memory_type)
+    if after:
+        try:
+            stmt = stmt.where(Memory.created_at >= dt.fromisoformat(after))
+        except: pass
+    if before:
+        try:
+            stmt = stmt.where(Memory.created_at <= dt.fromisoformat(before))
+        except: pass
+
+    # Count
+    count_stmt = select(func.count(Memory.id)).where(
+        Memory.org_id == org_id, Memory.pool_id == pool_id, Memory.status == "active"
+    )
+    total = (await db.execute(count_stmt)).scalar() or 0
+
+    stmt = stmt.order_by(Memory.created_at.desc()).limit(limit).offset(offset)
+    result = await db.execute(stmt)
+    memories = result.scalars().all()
+
+    return {
+        "pool_id": pool_id,
+        "total": total,
+        "memories": [
+            {
+                "id": m.id, "content": m.content, "memory_type": m.memory_type,
+                "agent_id": m.agent_id, "source_type": m.source_type,
+                "created_at": str(m.created_at), "importance": m.importance,
+            }
+            for m in memories
+        ]
+    }
+
+
+async def delete_pool(db, org_id: str, pool_id: str) -> dict:
+    """Archive all memories in a pool and remove ACL entries."""
+    # Archive memories
+    update_stmt = (
+        update(Memory)
+        .where(Memory.org_id == org_id, Memory.pool_id == pool_id)
+        .values(status="archived")
+    )
+    result = await db.execute(update_stmt)
+    archived = result.rowcount
+
+    # Delete ACL
+    del_stmt = delete(PoolAccess).where(
+        PoolAccess.org_id == org_id, PoolAccess.pool_id == pool_id
+    )
+    await db.execute(del_stmt)
+    await db.commit()
+
+    return {"pool_id": pool_id, "archived_memories": archived, "status": "deleted"}
+
+
+async def temporal_query(
+    db, org_id: str, user_id: str, after: str = None, before: str = None,
+    relative: str = None, memory_type: str = None, limit: int = 50
+) -> dict:
+    """Query memories by time range. Supports absolute ISO dates and relative queries."""
+    from datetime import datetime as dt, timedelta
+
+    now = dt.utcnow()
+
+    # Parse relative time
+    if relative:
+        rel = relative.lower().strip()
+        if "24 hour" in rel or "last day" in rel or "today" in rel:
+            after_dt = now - timedelta(hours=24)
+        elif "week" in rel or "7 day" in rel:
+            after_dt = now - timedelta(days=7)
+        elif "month" in rel or "30 day" in rel:
+            after_dt = now - timedelta(days=30)
+        elif "hour" in rel:
+            try:
+                hours = int(''.join(filter(str.isdigit, rel)) or '1')
+            except: hours = 1
+            after_dt = now - timedelta(hours=hours)
+        elif "session" in rel:
+            after_dt = now - timedelta(hours=4)  # approximate session
+        else:
+            after_dt = now - timedelta(hours=24)
+        after = after_dt.isoformat()
+
+    stmt = select(Memory).where(
+        Memory.org_id == org_id,
+        Memory.user_id == user_id,
+        Memory.status == "active",
+    )
+
+    if after:
+        try:
+            stmt = stmt.where(Memory.created_at >= dt.fromisoformat(after.replace("Z", "+00:00")))
+        except: pass
+    if before:
+        try:
+            stmt = stmt.where(Memory.created_at <= dt.fromisoformat(before.replace("Z", "+00:00")))
+        except: pass
+    if memory_type:
+        stmt = stmt.where(Memory.memory_type == memory_type)
+
+    stmt = stmt.order_by(Memory.created_at.desc()).limit(limit)
+    result = await db.execute(stmt)
+    memories = result.scalars().all()
+
+    return {
+        "query": {"after": after, "before": before, "relative": relative, "type": memory_type},
+        "total": len(memories),
+        "memories": [
+            {
+                "id": m.id, "content": m.content, "memory_type": m.memory_type,
+                "agent_id": m.agent_id, "source_type": m.source_type,
+                "structured_data": m.structured_data,
+                "created_at": str(m.created_at), "importance": m.importance,
+            }
+            for m in memories
+        ]
+    }
+
+
+async def graph_query(
+    db, org_id: str, start_entity: str, traversal: str = "2-hop",
+    relationship_types: list = None, user_id: str = None, limit: int = 50
+) -> dict:
+    """Traverse the knowledge graph from a starting entity."""
+    hops = 2 if "2" in traversal else 1
+    visited_entities = set()
+    visited_memory_ids = set()
+    edges = []
+
+    # Hop 1
+    current_entities = {start_entity.lower()}
+    for hop in range(hops):
+        next_entities = set()
+        for entity in current_entities:
+            if entity in visited_entities:
+                continue
+            visited_entities.add(entity)
+
+            rel_stmt = select(Relation).where(
+                Relation.org_id == org_id,
+                or_(
+                    Relation.source_entity.ilike(f"%{entity}%"),
+                    Relation.target_entity.ilike(f"%{entity}%")
+                )
+            )
+            if user_id:
+                rel_stmt = rel_stmt.where(Relation.user_id == user_id)
+            if relationship_types:
+                rel_stmt = rel_stmt.where(Relation.relation.in_(relationship_types))
+            rel_stmt = rel_stmt.limit(30)
+
+            rels = (await db.execute(rel_stmt)).scalars().all()
+            for rel in rels:
+                edges.append({
+                    "source": rel.source_entity,
+                    "relation": rel.relation,
+                    "target": rel.target_entity,
+                    "memory_id": rel.memory_id,
+                    "hop": hop + 1,
+                })
+                if rel.memory_id:
+                    visited_memory_ids.add(rel.memory_id)
+                next_entities.add(rel.source_entity.lower())
+                next_entities.add(rel.target_entity.lower())
+
+        current_entities = next_entities - visited_entities
+
+    # Load linked memories
+    memories = []
+    if visited_memory_ids:
+        mem_ids = list(visited_memory_ids)[:limit]
+        mem_stmt = select(Memory).where(
+            Memory.id.in_(mem_ids), Memory.org_id == org_id, Memory.status == "active"
+        )
+        mems = (await db.execute(mem_stmt)).scalars().all()
+        memories = [
+            {"id": m.id, "content": m.content, "type": m.memory_type, "created_at": str(m.created_at)}
+            for m in mems
+        ]
+
+    # Build node list
+    nodes = list(visited_entities)
+
+    return {
+        "start_entity": start_entity,
+        "traversal": traversal,
+        "nodes": len(nodes),
+        "edges": len(edges),
+        "graph": {"nodes": nodes, "edges": edges},
+        "linked_memories": memories,
     }

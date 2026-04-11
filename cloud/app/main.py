@@ -48,6 +48,9 @@ from app.engine import (
     get_agent_context, set_agent_context, clear_agent_context,
     # v1.0.0
     recall_context,
+    # Phase 4
+    batch_sync, create_memory_pool, get_pool_memories, delete_pool,
+    temporal_query, graph_query,
 )
 from app.models import (
     Memory, MemorySession, PoolAccess, Webhook,
@@ -1851,3 +1854,160 @@ async def api_revoke_key(
     key.is_active = False
     await db.commit()
     return {"status": "ok", "revoked": key_id}
+
+
+# ───────────────────────────────────────────────────────────────
+# Phase 4 – Batch, Pools, Temporal, Graph
+# ───────────────────────────────────────────────────────────────
+
+# --- Phase 4.1: Batch Sync ---
+
+@app.post("/v1/memories/batch")
+async def api_batch_sync(
+    request: Request,
+    auth: AuthContext = Depends(authenticate),
+    db: AsyncSession = Depends(get_db),
+):
+    """Process multiple memory operations in a single request."""
+    body = await request.json()
+    operations = body.get("operations", [])
+    user_id = body.get("user_id", "default")
+    agent_id = body.get("agent_id")
+
+    if not operations:
+        return {"error": "No operations provided", "processed": 0}
+    if len(operations) > 100:
+        return {"error": "Maximum 100 operations per batch", "processed": 0}
+
+    result = await batch_sync(
+        db, org_id=auth.org_id, operations=operations,
+        user_id=user_id, agent_id=agent_id
+    )
+    return result
+
+
+# --- Phase 4.2: Pool Management ---
+
+@app.post("/v1/pools/")
+async def api_create_pool(
+    request: Request,
+    auth: AuthContext = Depends(authenticate),
+    db: AsyncSession = Depends(get_db),
+):
+    """Create a shared memory pool for multi-agent collaboration."""
+    body = await request.json()
+    pool_id = body.get("pool_id")
+    if not pool_id:
+        return {"error": "pool_id is required"}
+
+    result = await create_memory_pool(
+        db, org_id=auth.org_id, pool_id=pool_id,
+        name=body.get("name"), agents=body.get("agents", []),
+        description=body.get("description")
+    )
+    return result
+
+
+@app.get("/v1/pools/{pool_id}/memories")
+async def api_get_pool_memories(
+    pool_id: str,
+    user_id: str = Query(None),
+    agent_id: str = Query(None),
+    memory_type: str = Query(None),
+    after: str = Query(None),
+    before: str = Query(None),
+    limit: int = Query(50, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    auth: AuthContext = Depends(authenticate),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get memories from a specific pool with optional filtering."""
+    result = await get_pool_memories(
+        db, org_id=auth.org_id, pool_id=pool_id,
+        agent_id=agent_id, memory_type=memory_type,
+        limit=limit, offset=offset, after=after, before=before
+    )
+    return result
+
+
+@app.post("/v1/pools/{pool_id}/memories")
+async def api_add_pool_memory(
+    pool_id: str,
+    request: Request,
+    auth: AuthContext = Depends(authenticate),
+    db: AsyncSession = Depends(get_db),
+):
+    """Write a memory directly to a shared pool."""
+    body = await request.json()
+    text = body.get("text", "")
+    if not text:
+        return {"error": "text is required"}
+
+    result = await add_memory(
+        db, org_id=auth.org_id, text=text,
+        user_id=body.get("user_id", "default"),
+        agent_id=body.get("agent_id"),
+        pool_id=pool_id,
+        scope="team",
+        source_type=body.get("source_type", "pool_write"),
+        source_ref=body.get("source_ref"),
+    )
+    return result
+
+
+@app.delete("/v1/pools/{pool_id}")
+async def api_delete_pool(
+    pool_id: str,
+    auth: AuthContext = Depends(authenticate),
+    db: AsyncSession = Depends(get_db),
+):
+    """Delete a pool and archive its memories."""
+    result = await delete_pool(db, org_id=auth.org_id, pool_id=pool_id)
+    return result
+
+
+# --- Phase 4.3: Temporal Query ---
+
+@app.get("/v1/memories/temporal")
+async def api_temporal_query(
+    user_id: str = Query(...),
+    after: str = Query(None),
+    before: str = Query(None),
+    relative: str = Query(None),
+    memory_type: str = Query(None),
+    limit: int = Query(50, ge=1, le=500),
+    auth: AuthContext = Depends(authenticate),
+    db: AsyncSession = Depends(get_db),
+):
+    """Query memories by time range. Supports ISO dates and relative queries like 'last 24 hours'."""
+    result = await temporal_query(
+        db, org_id=auth.org_id, user_id=user_id,
+        after=after, before=before, relative=relative,
+        memory_type=memory_type, limit=limit
+    )
+    return result
+
+
+# --- Phase 4.4: Graph Query ---
+
+@app.post("/v1/graph/query")
+async def api_graph_query(
+    request: Request,
+    auth: AuthContext = Depends(authenticate),
+    db: AsyncSession = Depends(get_db),
+):
+    """Traverse the knowledge graph from a starting entity."""
+    body = await request.json()
+    start_entity = body.get("start_entity")
+    if not start_entity:
+        return {"error": "start_entity is required"}
+
+    result = await graph_query(
+        db, org_id=auth.org_id,
+        start_entity=start_entity,
+        traversal=body.get("traversal", "2-hop"),
+        relationship_types=body.get("relationship_types"),
+        user_id=body.get("user_id"),
+        limit=body.get("limit", 50)
+    )
+    return result
